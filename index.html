@@ -101,22 +101,42 @@
     width:100%; height:100%;
     position:relative;
     transform-style: preserve-3d;
-    animation: spin 14s linear infinite;
+    cursor: grab;
+    touch-action: none;
   }
+  .wireframe.dragging{ cursor: grabbing; }
   .wireframe .face{
     position:absolute; width:160px; height:160px;
     border: 1px solid var(--teal);
-    background: linear-gradient(135deg, rgba(76,224,210,0.08), rgba(255,107,157,0.08));
+    backface-visibility: hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 0.3rem;
+    cursor: pointer;
+    transition: filter 0.2s ease;
   }
-  .face.f1{ transform: translateZ(80px); }
-  .face.f2{ transform: rotateY(180deg) translateZ(80px); }
-  .face.f3{ transform: rotateY(90deg) translateZ(80px); }
-  .face.f4{ transform: rotateY(-90deg) translateZ(80px); }
-  .face.f5{ transform: rotateX(90deg) translateZ(80px); }
-  .face.f6{ transform: rotateX(-90deg) translateZ(80px); }
-  @keyframes spin{
-    from{ transform: rotateX(-18deg) rotateY(0deg); }
-    to{ transform: rotateX(-18deg) rotateY(360deg); }
+  .wireframe .face:hover, .wireframe .face:focus-visible{ filter: brightness(1.25); }
+  .face .face-dim{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62rem; letter-spacing:0.1em;
+    color: rgba(240,238,247,0.85);
+    background: rgba(20,19,31,0.5);
+    padding: 0.15rem 0.45rem; border-radius:2px;
+  }
+  .face .face-num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:1.1rem; font-weight:600;
+    color: rgba(240,238,247,0.95);
+  }
+  .face.f1{ transform: translateZ(80px); background: linear-gradient(135deg, #2a2447, #4ce0d2 140%); }
+  .face.f2{ transform: rotateY(180deg) translateZ(80px); background: linear-gradient(135deg, #33203a, #ff6b9d 140%); }
+  .face.f3{ transform: rotateY(90deg) translateZ(80px); background: linear-gradient(135deg, #1c3a3a, #4ce0d2 140%); }
+  .face.f4{ transform: rotateY(-90deg) translateZ(80px); background: linear-gradient(135deg, #3a1f2e, #ff6b9d 140%); }
+  .face.f5{ transform: rotateX(90deg) translateZ(80px); background: linear-gradient(315deg, #24283a, #4ce0d2 140%); }
+  .face.f6{ transform: rotateX(-90deg) translateZ(80px); background: linear-gradient(315deg, #3a2438, #ff6b9d 140%); }
+  .cube-hint{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem; color: var(--muted);
+    margin-top: 0.9rem;
   }
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
@@ -266,6 +286,8 @@
   .p2 .plane{ background: linear-gradient(135deg, #33203a, #ff6b9d 140%); }
   .p3 .plane{ background: linear-gradient(135deg, #1c3a3a, #4ce0d2 140%); }
   .p4 .plane{ background: linear-gradient(135deg, #3a1f2e, #ff6b9d 140%); }
+  .p5 .plane{ background: linear-gradient(315deg, #24283a, #4ce0d2 140%); }
+  .p6 .plane{ background: linear-gradient(315deg, #3a2438, #ff6b9d 140%); }
   .project-thumb .glyph{
     position:relative; z-index:1;
     font-family:'JetBrains Mono', monospace;
@@ -327,6 +349,48 @@
     flex-wrap:wrap; gap:0.8rem;
   }
 
+  /* ---------- Modale progetto ---------- */
+  .project-card{ cursor: pointer; }
+  .modal-overlay{
+    position: fixed; inset:0; z-index: 200;
+    background: rgba(20,19,31,0.86);
+    backdrop-filter: blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    padding: 6vw;
+    opacity:0; pointer-events:none;
+    transition: opacity 0.3s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    max-width: 560px; width:100%;
+    overflow:hidden;
+    transform: translateY(18px) scale(0.98);
+    transition: transform 0.35s ease;
+  }
+  .modal-overlay.open .modal{ transform: translateY(0) scale(1); }
+  .modal-thumb{ height: 220px; position:relative; }
+  .modal-close{
+    position:absolute; top:1rem; right:1rem; z-index:2;
+    width: 34px; height:34px; border-radius:50%;
+    background: rgba(20,19,31,0.55);
+    border:none; color: var(--text);
+    font-size:1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal-body{ padding: 1.8rem 2rem 2.2rem; }
+  .modal-body .cat{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem; color: var(--teal); letter-spacing:0.08em;
+  }
+  .modal-body h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:1.5rem; margin: 0.6rem 0 0.8rem;
+  }
+  .modal-body p{ color: var(--muted); font-size:0.95rem; line-height:1.7; }
+
   /* ---------- Responsive ---------- */
   @media (max-width: 860px){
     .about{ grid-template-columns: 1fr; }
@@ -339,7 +403,6 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .wireframe{ animation: none; }
     html{ scroll-behavior:auto; }
     .scroll-hint::after{ animation:none; }
   }
@@ -365,17 +428,30 @@
   <div class="grid-floor"></div>
 
   <div class="wireframe-wrap">
-    <div class="wireframe">
-      <div class="face f1"></div>
-      <div class="face f2"></div>
-      <div class="face f3"></div>
-      <div class="face f4"></div>
-      <div class="face f5"></div>
-      <div class="face f6"></div>
+    <div class="wireframe" id="cube">
+      <div class="face f1" data-project="p1" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 01">
+        <span class="face-dim">2D</span><span class="face-num">01</span>
+      </div>
+      <div class="face f2" data-project="p2" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 02">
+        <span class="face-dim">AR</span><span class="face-num">02</span>
+      </div>
+      <div class="face f3" data-project="p3" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 03">
+        <span class="face-dim">3D</span><span class="face-num">03</span>
+      </div>
+      <div class="face f4" data-project="p4" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 04">
+        <span class="face-dim">VR</span><span class="face-num">04</span>
+      </div>
+      <div class="face f5" data-project="p5" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 05">
+        <span class="face-dim">2D</span><span class="face-num">05</span>
+      </div>
+      <div class="face f6" data-project="p6" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 06">
+        <span class="face-dim">3D</span><span class="face-num">06</span>
+      </div>
     </div>
   </div>
+  <p class="cube-hint">Trascina per ruotare · clicca un lato per aprire un progetto</p>
 
-  <div class="eyebrow">Design <span class="dim">2D</span> → <span class="dim">3D</span> → <span class="dim">VR/AR</span></div>
+  <div class="eyebrow" style="margin-top:1.8rem">Design <span class="dim">2D</span> → <span class="dim">3D</span> → <span class="dim">VR/AR</span></div>
   <h1>Costruisco mondi che si possono <span class="accent">attraversare</span>.</h1>
   <p class="sub">Sono <strong style="color:var(--text)">[Il Tuo Nome]</strong>, designer grafico e artista 3D. Progetto identità visive, modelli tridimensionali ed esperienze immersive in realtà virtuale e aumentata.</p>
 
@@ -458,7 +534,7 @@
     <div class="tag">// sostituisci titoli, categorie e descrizioni con i tuoi lavori reali</div>
   </div>
   <div class="projects-grid">
-    <div class="project-card p1">
+    <div class="project-card p1" data-project="p1" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 01">
       <div class="project-thumb"><div class="plane"></div><span class="glyph">2D · brand</span></div>
       <div class="project-body">
         <div class="cat">IDENTITÀ VISIVA</div>
@@ -466,7 +542,7 @@
         <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
       </div>
     </div>
-    <div class="project-card p2">
+    <div class="project-card p2" data-project="p2" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 02">
       <div class="project-thumb"><div class="plane"></div><span class="glyph">AR · mobile</span></div>
       <div class="project-body">
         <div class="cat">REALTÀ AUMENTATA</div>
@@ -474,7 +550,7 @@
         <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
       </div>
     </div>
-    <div class="project-card p3">
+    <div class="project-card p3" data-project="p3" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 03">
       <div class="project-thumb"><div class="plane"></div><span class="glyph">3D · asset</span></div>
       <div class="project-body">
         <div class="cat">MODELLAZIONE 3D</div>
@@ -482,11 +558,27 @@
         <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
       </div>
     </div>
-    <div class="project-card p4">
+    <div class="project-card p4" data-project="p4" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 04">
       <div class="project-thumb"><div class="plane"></div><span class="glyph">VR · ambiente</span></div>
       <div class="project-body">
         <div class="cat">REALTÀ VIRTUALE</div>
         <h3>Nome Progetto 04</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+    <div class="project-card p5" data-project="p5" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 05">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">2D · illustrazione</span></div>
+      <div class="project-body">
+        <div class="cat">ILLUSTRAZIONE DIGITALE</div>
+        <h3>Nome Progetto 05</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+    <div class="project-card p6" data-project="p6" tabindex="0" role="button" aria-label="Apri progetto: Nome Progetto 06">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">3D · ambiente</span></div>
+      <div class="project-body">
+        <div class="cat">AMBIENTE REAL-TIME</div>
+        <h3>Nome Progetto 06</h3>
         <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
       </div>
     </div>
@@ -506,6 +598,18 @@
   </div>
 </section>
 
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" aria-label="Chiudi">✕</button>
+    <div class="modal-thumb" id="modalThumb"></div>
+    <div class="modal-body">
+      <div class="cat" id="modalCat"></div>
+      <h3 id="modalTitle"></h3>
+      <p id="modalDesc"></p>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div>© <span id="year"></span> Il Tuo Nome</div>
   <div>Realizzato con HTML statico</div>
@@ -513,18 +617,119 @@
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
-
-  // Leggero effetto parallasse sul wireframe in base al mouse (rispetta prefers-reduced-motion)
-  const wireframe = document.querySelector('.wireframe');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduceMotion && wireframe) {
-    document.querySelector('.hero').addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 20;
-      const y = (e.clientY / window.innerHeight - 0.5) * -20;
-      wireframe.style.animationPlayState = 'running';
-      wireframe.style.transform = `rotateX(${-18 + y}deg) rotateY(${x}deg)`;
-    });
+
+  /* ---------- Dati progetti (collegati sia al cubo che alla griglia) ---------- */
+  /* Sostituisci titolo, categoria e descrizione con i tuoi progetti reali */
+  const projectData = {
+    p1: { cat: 'IDENTITÀ VISIVA',       title: 'Nome Progetto 01', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(135deg, #2a2447, #4ce0d2 140%)' },
+    p2: { cat: 'REALTÀ AUMENTATA',      title: 'Nome Progetto 02', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(135deg, #33203a, #ff6b9d 140%)' },
+    p3: { cat: 'MODELLAZIONE 3D',       title: 'Nome Progetto 03', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(135deg, #1c3a3a, #4ce0d2 140%)' },
+    p4: { cat: 'REALTÀ VIRTUALE',       title: 'Nome Progetto 04', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(135deg, #3a1f2e, #ff6b9d 140%)' },
+    p5: { cat: 'ILLUSTRAZIONE DIGITALE', title: 'Nome Progetto 05', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(315deg, #24283a, #4ce0d2 140%)' },
+    p6: { cat: 'AMBIENTE REAL-TIME',    title: 'Nome Progetto 06', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: 'linear-gradient(315deg, #3a2438, #ff6b9d 140%)' }
+  };
+
+  /* ---------- Modale ---------- */
+  const overlay = document.getElementById('modalOverlay');
+  const modalThumb = document.getElementById('modalThumb');
+  const modalCat = document.getElementById('modalCat');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDesc = document.getElementById('modalDesc');
+  const modalClose = document.getElementById('modalClose');
+  let lastFocused = null;
+
+  function openModal(id){
+    const d = projectData[id];
+    if (!d) return;
+    lastFocused = document.activeElement;
+    modalThumb.style.background = d.gradient;
+    modalCat.textContent = d.cat;
+    modalTitle.textContent = d.title;
+    modalDesc.textContent = d.desc;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    autoRotate = false;
+    modalClose.focus();
   }
+  function closeModal(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastFocused) lastFocused.focus();
+  }
+  modalClose.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // Le card della griglia progetti aprono lo stesso modale
+  document.querySelectorAll('.project-card[data-project]').forEach(card => {
+    card.addEventListener('click', () => openModal(card.dataset.project));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project); }
+    });
+  });
+
+  /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto ---------- */
+  const cube = document.getElementById('cube');
+  const wrap = document.querySelector('.wireframe-wrap');
+  let rotX = -18, rotY = 0;
+  let autoRotate = true;
+  let dragging = false, moved = false;
+  let startX = 0, startY = 0, startRotX = 0, startRotY = 0;
+
+  function applyRotation(){
+    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  }
+  applyRotation();
+
+  function tick(){
+    if (autoRotate && !dragging) {
+      rotY += 0.12;
+      applyRotation();
+    }
+    requestAnimationFrame(tick);
+  }
+  if (!reduceMotion) requestAnimationFrame(tick);
+
+  wrap.addEventListener('pointerdown', (e) => {
+    dragging = true; moved = false; autoRotate = false;
+    cube.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startRotX = rotX; startRotY = rotY;
+    wrap.setPointerCapture(e.pointerId);
+  });
+
+  wrap.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+    rotY = startRotY + dx * 0.4;
+    rotX = startRotX - dy * 0.4;
+    applyRotation();
+  });
+
+  function endDrag(e){
+    if (!dragging) return;
+    dragging = false;
+    cube.classList.remove('dragging');
+    if (!moved) {
+      const face = e.target.closest('.face');
+      if (face && face.dataset.project) openModal(face.dataset.project);
+    } else if (!reduceMotion) {
+      setTimeout(() => { if (!dragging) autoRotate = true; }, 2500);
+    }
+    moved = false;
+  }
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+
+  // Accessibilità da tastiera: Invio/Spazio su un lato del cubo apre il progetto
+  document.querySelectorAll('.face[data-project]').forEach(face => {
+    face.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project); }
+    });
+  });
 </script>
 
 </body>
