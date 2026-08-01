@@ -1,10 +1,531 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-	<title>ziopera</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il Tuo Nome — Design 2D · 3D · VR/AR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14131f;
+    --surface: #1e1b2e;
+    --surface-2: #262239;
+    --text: #f0eef7;
+    --muted: #9c97b8;
+    --teal: #4ce0d2;
+    --magenta: #ff6b9d;
+    --line: rgba(240,238,247,0.09);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x:hidden;
+  }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- Focus visibility (accessibility) ---------- */
+  a:focus-visible, button:focus-visible{
+    outline: 2px solid var(--teal);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Nav ---------- */
+  header{
+    position: fixed; top:0; left:0; right:0; z-index: 50;
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 22px 6vw;
+    background: linear-gradient(to bottom, rgba(20,19,31,0.9), transparent);
+  }
+  .logo{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600; font-size:1rem; letter-spacing:0.02em;
+  }
+  .logo span{ color: var(--teal); }
+  nav ul{ list-style:none; display:flex; gap:2.2rem; }
+  nav a{
+    font-size:0.85rem; color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    transition: color 0.25s ease;
+  }
+  nav a:hover{ color: var(--teal); }
+  .nav-toggle{ display:none; }
+
+  /* ---------- Hero: 3D viewport ---------- */
+  .hero{
+    position:relative;
+    height:100vh;
+    min-height: 640px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    perspective: 900px;
+    overflow:hidden;
+  }
+  .grid-floor{
+    position:absolute;
+    bottom:-10%;
+    left:50%;
+    width:220%;
+    height:70%;
+    transform: translateX(-50%) rotateX(78deg);
+    background-image:
+      linear-gradient(to right, var(--line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(to top, black 10%, transparent 85%);
+            mask-image: linear-gradient(to top, black 10%, transparent 85%);
+    pointer-events:none;
+  }
+  .hero-glow{
+    position:absolute;
+    width:60vw; height:60vw;
+    max-width:700px; max-height:700px;
+    background: radial-gradient(circle, rgba(76,224,210,0.16), transparent 65%);
+    top:8%; left:50%; transform:translateX(-50%);
+    pointer-events:none;
+  }
+  .wireframe-wrap{
+    width: 160px; height:160px;
+    margin-bottom: 2.2rem;
+    perspective: 700px;
+  }
+  .wireframe{
+    width:100%; height:100%;
+    position:relative;
+    transform-style: preserve-3d;
+    animation: spin 14s linear infinite;
+  }
+  .wireframe .face{
+    position:absolute; width:160px; height:160px;
+    border: 1px solid var(--teal);
+    background: linear-gradient(135deg, rgba(76,224,210,0.08), rgba(255,107,157,0.08));
+  }
+  .face.f1{ transform: translateZ(80px); }
+  .face.f2{ transform: rotateY(180deg) translateZ(80px); }
+  .face.f3{ transform: rotateY(90deg) translateZ(80px); }
+  .face.f4{ transform: rotateY(-90deg) translateZ(80px); }
+  .face.f5{ transform: rotateX(90deg) translateZ(80px); }
+  .face.f6{ transform: rotateX(-90deg) translateZ(80px); }
+  @keyframes spin{
+    from{ transform: rotateX(-18deg) rotateY(0deg); }
+    to{ transform: rotateX(-18deg) rotateY(360deg); }
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color: var(--muted);
+    margin-bottom: 1.1rem;
+  }
+  .eyebrow .dim{ color: var(--magenta); }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: clamp(2.4rem, 6.5vw, 5rem);
+    line-height:1.05;
+    letter-spacing:-0.01em;
+    max-width: 16ch;
+  }
+  h1 .accent{
+    background: linear-gradient(100deg, var(--teal), var(--magenta));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .hero p.sub{
+    margin-top:1.4rem;
+    color: var(--muted);
+    font-size:1.05rem;
+    max-width: 44ch;
+  }
+  .scroll-hint{
+    position:absolute; bottom: 2.4rem; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem; color: var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:0.5rem;
+  }
+  .scroll-hint::after{
+    content:''; width:1px; height:28px; background: var(--muted);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:0.2; } 50%{ opacity:0.8; } }
+
+  /* ---------- Section shell ---------- */
+  section{ padding: 7rem 6vw; position:relative; }
+  .section-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom: 3rem; gap:2rem; flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    font-weight:600;
+  }
+  .section-head .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem; color: var(--muted);
+    max-width: 34ch; text-align:right;
+  }
+
+  /* ---------- About ---------- */
+  .about{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 4rem;
+    align-items:start;
+  }
+  .about p{ color: var(--muted); font-size:1.05rem; line-height:1.75; margin-bottom:1.2rem; }
+  .about strong{ color: var(--text); font-weight:600; }
+  .stat-block{
+    display:grid; gap:1.4rem;
+  }
+  .stat{
+    border-left: 2px solid var(--teal);
+    padding-left: 1.1rem;
+  }
+  .stat .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:2.1rem; font-weight:700;
+  }
+  .stat .label{ color: var(--muted); font-size:0.85rem; }
+
+  /* ---------- Dimensions / skills ---------- */
+  .dims{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6rem;
+  }
+  .dim-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2.2rem 1.8rem;
+    transition: transform 0.4s ease, border-color 0.4s ease;
+  }
+  .dim-card:hover{
+    transform: translateY(-6px);
+    border-color: var(--teal);
+  }
+  .dim-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem; color: var(--magenta);
+    letter-spacing:0.08em;
+  }
+  .dim-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:1.5rem; margin:0.6rem 0 0.9rem;
+  }
+  .dim-card p{ color: var(--muted); font-size:0.92rem; line-height:1.6; margin-bottom:1.2rem; }
+  .dim-card ul{ list-style:none; display:flex; flex-wrap:wrap; gap:0.5rem; }
+  .dim-card li{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    border: 1px solid var(--line);
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    color: var(--muted);
+  }
+
+  /* ---------- Projects: layered planes ---------- */
+  .projects-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    perspective: 1400px;
+  }
+  .project-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow:hidden;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    transform-style: preserve-3d;
+  }
+  .project-card:hover{
+    transform: rotateY(-4deg) rotateX(2deg) translateY(-4px);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
+  }
+  .project-thumb{
+    height: 190px;
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .project-thumb .plane{
+    position:absolute; inset:0;
+  }
+  .p1 .plane{ background: linear-gradient(135deg, #2a2447, #4ce0d2 140%); }
+  .p2 .plane{ background: linear-gradient(135deg, #33203a, #ff6b9d 140%); }
+  .p3 .plane{ background: linear-gradient(135deg, #1c3a3a, #4ce0d2 140%); }
+  .p4 .plane{ background: linear-gradient(135deg, #3a1f2e, #ff6b9d 140%); }
+  .project-thumb .glyph{
+    position:relative; z-index:1;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    color: rgba(240,238,247,0.85);
+    background: rgba(20,19,31,0.55);
+    padding: 0.35rem 0.7rem;
+    border-radius: 3px;
+    letter-spacing:0.06em;
+  }
+  .project-body{ padding: 1.6rem 1.6rem 1.8rem; }
+  .project-body .cat{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem; color: var(--teal); letter-spacing:0.08em;
+  }
+  .project-body h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:1.25rem; margin: 0.5rem 0 0.6rem;
+  }
+  .project-body p{ color: var(--muted); font-size:0.9rem; line-height:1.6; }
+
+  /* ---------- Contact ---------- */
+  .contact{
+    text-align:center;
+    padding-bottom: 8rem;
+  }
+  .contact h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    max-width: 18ch;
+    margin: 0 auto 1.6rem;
+  }
+  .contact p{ color: var(--muted); margin-bottom: 2.2rem; }
+  .btn{
+    display:inline-flex; align-items:center; gap:0.6rem;
+    background: linear-gradient(100deg, var(--teal), var(--magenta));
+    color: #14131f;
+    font-weight:600;
+    padding: 0.95rem 1.8rem;
+    border-radius: 4px;
+    font-size:0.95rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 14px 30px -12px rgba(76,224,210,0.4); }
+  .socials{
+    margin-top: 2.6rem;
+    display:flex; justify-content:center; gap:1.6rem;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85rem; color: var(--muted);
+  }
+  .socials a:hover{ color: var(--teal); }
+
+  footer{
+    border-top: 1px solid var(--line);
+    padding: 2rem 6vw;
+    display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem; color: var(--muted);
+    flex-wrap:wrap; gap:0.8rem;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px){
+    .about{ grid-template-columns: 1fr; }
+    .dims{ grid-template-columns: 1fr; }
+    nav ul{ gap:1.2rem; }
+  }
+  @media (max-width: 560px){
+    nav ul{ display:none; }
+    section{ padding: 5rem 6vw; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .wireframe{ animation: none; }
+    html{ scroll-behavior:auto; }
+    .scroll-hint::after{ animation:none; }
+  }
+</style>
 </head>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+
+<header>
+  <div class="logo">TUO<span>NOME</span></div>
+  <nav>
+    <ul>
+      <li><a href="#about">Chi sono</a></li>
+      <li><a href="#skills">Competenze</a></li>
+      <li><a href="#projects">Progetti</a></li>
+      <li><a href="#contact">Contatti</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="grid-floor"></div>
+
+  <div class="wireframe-wrap">
+    <div class="wireframe">
+      <div class="face f1"></div>
+      <div class="face f2"></div>
+      <div class="face f3"></div>
+      <div class="face f4"></div>
+      <div class="face f5"></div>
+      <div class="face f6"></div>
+    </div>
+  </div>
+
+  <div class="eyebrow">Design <span class="dim">2D</span> → <span class="dim">3D</span> → <span class="dim">VR/AR</span></div>
+  <h1>Costruisco mondi che si possono <span class="accent">attraversare</span>.</h1>
+  <p class="sub">Sono <strong style="color:var(--text)">[Il Tuo Nome]</strong>, designer grafico e artista 3D. Progetto identità visive, modelli tridimensionali ed esperienze immersive in realtà virtuale e aumentata.</p>
+
+  <div class="scroll-hint">SCROLL</div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-head">
+    <h2>Chi sono</h2>
+    <div class="tag">// da modificare con la tua storia reale</div>
+  </div>
+  <div class="about">
+    <div>
+      <p>Lavoro all'incrocio tra <strong>grafica bidimensionale</strong>, <strong>modellazione tridimensionale</strong> e <strong>ambienti immersivi</strong>. Il mio percorso parte dal disegno digitale, passa per il modeling e la texture, e arriva a costruire esperienze indossabili in VR e AR.</p>
+      <p>Mi interessa il momento in cui un'immagine smette di essere piatta e diventa uno spazio in cui si può entrare — è lì che concentro la maggior parte del mio lavoro, dalla concept art ai prototipi interattivi.</p>
+      <p>[Sostituisci questo paragrafo con 2-3 frasi sul tuo percorso: formazione, software che usi, settori in cui hai lavorato, cosa ti rende diverso.]</p>
+    </div>
+    <div class="stat-block">
+      <div class="stat">
+        <div class="num">40+</div>
+        <div class="label">progetti completati</div>
+      </div>
+      <div class="stat">
+        <div class="num">6</div>
+        <div class="label">anni di esperienza</div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="label">dimensioni in cui lavoro: 2D, 3D, VR/AR</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS / DIMENSIONS -->
+<section id="skills">
+  <div class="section-head">
+    <h2>Competenze per dimensione</h2>
+    <div class="tag">// tre livelli di profondità, un'unica visione</div>
+  </div>
+  <div class="dims">
+    <div class="dim-card">
+      <div class="dim-tag">DIMENSIONE 2D</div>
+      <h3>Grafica &amp; identità visiva</h3>
+      <p>Branding, illustrazione digitale, UI, composizione e color grading.</p>
+      <ul>
+        <li>Illustrator</li>
+        <li>Photoshop</li>
+        <li>Figma</li>
+      </ul>
+    </div>
+    <div class="dim-card">
+      <div class="dim-tag">DIMENSIONE 3D</div>
+      <h3>Modellazione &amp; rendering</h3>
+      <p>Modeling, sculpting, texturing, rigging e rendering fotorealistico.</p>
+      <ul>
+        <li>Blender</li>
+        <li>ZBrush</li>
+        <li>Substance Painter</li>
+      </ul>
+    </div>
+    <div class="dim-card">
+      <div class="dim-tag">DIMENSIONE VR/AR</div>
+      <h3>Esperienze immersive</h3>
+      <p>Ambienti interattivi, tracking, ottimizzazione real-time per headset e mobile.</p>
+      <ul>
+        <li>Unity</li>
+        <li>Unreal Engine</li>
+        <li>WebXR</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-head">
+    <h2>Progetti selezionati</h2>
+    <div class="tag">// sostituisci titoli, categorie e descrizioni con i tuoi lavori reali</div>
+  </div>
+  <div class="projects-grid">
+    <div class="project-card p1">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">2D · brand</span></div>
+      <div class="project-body">
+        <div class="cat">IDENTITÀ VISIVA</div>
+        <h3>Nome Progetto 01</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+    <div class="project-card p2">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">AR · mobile</span></div>
+      <div class="project-body">
+        <div class="cat">REALTÀ AUMENTATA</div>
+        <h3>Nome Progetto 02</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+    <div class="project-card p3">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">3D · asset</span></div>
+      <div class="project-body">
+        <div class="cat">MODELLAZIONE 3D</div>
+        <h3>Nome Progetto 03</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+    <div class="project-card p4">
+      <div class="project-thumb"><div class="plane"></div><span class="glyph">VR · ambiente</span></div>
+      <div class="project-body">
+        <div class="cat">REALTÀ VIRTUALE</div>
+        <h3>Nome Progetto 04</h3>
+        <p>Breve descrizione: obiettivo del progetto, cliente o contesto, strumenti usati.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact">
+  <h2>Parliamo del tuo prossimo progetto.</h2>
+  <p>Disponibile per collaborazioni, commissioni e progetti freelance.</p>
+  <a class="btn" href="mailto:tuaemail@esempio.com">Scrivimi → tuaemail@esempio.com</a>
+  <div class="socials">
+    <a href="#">Instagram</a>
+    <a href="#">Behance</a>
+    <a href="#">ArtStation</a>
+    <a href="#">LinkedIn</a>
+  </div>
+</section>
+
+<footer>
+  <div>© <span id="year"></span> Il Tuo Nome</div>
+  <div>Realizzato con HTML statico</div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Leggero effetto parallasse sul wireframe in base al mouse (rispetta prefers-reduced-motion)
+  const wireframe = document.querySelector('.wireframe');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion && wireframe) {
+    document.querySelector('.hero').addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 20;
+      const y = (e.clientY / window.innerHeight - 0.5) * -20;
+      wireframe.style.animationPlayState = 'running';
+      wireframe.style.transform = `rotateX(${-18 + y}deg) rotateY(${x}deg)`;
+    });
+  }
+</script>
+
 </body>
 </html>
