@@ -148,7 +148,7 @@
     margin-top: 0.5rem;
   }
 
-  /* ---------- Ciondoli fluttuanti (ispirati ai teschietti dell'illustrazione) ---------- */
+  /* ---------- Ciondoli fluttuanti ---------- */
   .charm{
     position:absolute;
     border-radius:50%;
@@ -305,6 +305,7 @@
     overflow:hidden;
     transition: transform 0.5s ease, box-shadow 0.5s ease;
     transform-style: preserve-3d;
+    cursor: pointer;
   }
   .project-card:hover{
     transform: rotateY(-4deg) rotateX(2deg) translateY(-4px);
@@ -386,22 +387,20 @@
     flex-wrap:wrap; gap:0.8rem;
   }
 
-  /*modifica */
-  <div class="morph-overlay" id="morphOverlay"></div>
+  /* ---------- Morph overlay (effetto espansione cubo) ---------- */
   .morph-overlay{
-  position: fixed;
-  z-index: 150;
-  border-radius: 6px;
-  pointer-events: none;
-  transition: all 0.55s cubic-bezier(0.65, 0, 0.35, 1);
-  opacity: 0;
-}
-.morph-overlay.active{
-  opacity: 1;
-}
+    position: fixed;
+    z-index: 150;
+    border-radius: 6px;
+    pointer-events: none;
+    transition: all 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity: 0;
+  }
+  .morph-overlay.active{
+    opacity: 1;
+  }
 
   /* ---------- Modale progetto ---------- */
-  .project-card{ cursor: pointer; }
   .modal-overlay{
     position: fixed; inset:0; z-index: 200;
     background: rgba(5,0,15,0.86);
@@ -504,13 +503,8 @@
       </div>
     </div>
   </div>
-
-
-  <div class="eyebrow" style="margin-top:1.8rem">Design <span class="dim">2D</span> Graphics → <span class="dim">3D</span> modeling → <span class="dim">Virtual Reality</span></div>
+    <div class="eyebrow" style="margin-top:1.8rem">Design <span class="dim">2D</span> Graphics → <span class="dim">3D</span> modeling → <span class="dim">Virtual Reality</span></div>
     <p class="cube-hint">Trascina per ruotare · clicca un lato per aprire un progetto</p>
-  <!--<h1>Costruisco mondi che si possono <span class="accent">attraversare</span>.</h1>
-  <p class="sub">Sono <strong style="color:var(--text)">[Il Tuo Nome]</strong>, designer grafico e artista 3D. Progetto identità visive, modelli tridimensionali ed esperienze immersive in realtà virtuale e aumentata.</p>
-// -->
   <div class="scroll-hint">SCROLL</div>
 </section>
 
@@ -654,6 +648,9 @@
   </div>
 </section>
 
+<!-- Overlay usato per l'effetto di espansione dal cubo/dalle card -->
+<div class="morph-overlay" id="morphOverlay"></div>
+
 <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal">
     <button class="modal-close" id="modalClose" aria-label="Chiudi">✕</button>
@@ -676,7 +673,6 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- Dati progetti (collegati sia al cubo che alla griglia) ---------- */
-  /* Sostituisci titolo, categoria e descrizione con i tuoi progetti reali */
   const projectData = {
     p1: { cat: 'IDENTITÀ VISIVA',       title: 'Nome Progetto 01', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: '#ff8339' },
     p2: { cat: 'REALTÀ AUMENTATA',      title: 'Nome Progetto 02', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: '#ff3d6b' },
@@ -686,76 +682,75 @@
     p6: { cat: 'AMBIENTE REAL-TIME',    title: 'Nome Progetto 06', desc: 'Descrizione estesa: obiettivo del progetto, cliente o contesto, ruolo avuto, strumenti usati.', gradient: '#e352ff' }
   };
 
-  /* ---------- Modale ---------- */
+  /* ---------- Modale + morph ---------- */
   const overlay = document.getElementById('modalOverlay');
   const modalThumb = document.getElementById('modalThumb');
   const modalCat = document.getElementById('modalCat');
   const modalTitle = document.getElementById('modalTitle');
   const modalDesc = document.getElementById('modalDesc');
   const modalClose = document.getElementById('modalClose');
+  const morphOverlay = document.getElementById('morphOverlay');
   let lastFocused = null;
 
-const morphOverlay = document.getElementById('morphOverlay');
+  function openModal(id, sourceEl){
+    const d = projectData[id];
+    if (!d) return;
+    lastFocused = document.activeElement;
+    autoRotate = false;
 
-function openModal(id, sourceEl){
-  const d = projectData[id];
-  if (!d) return;
-  lastFocused = document.activeElement;
-  autoRotate = false;
+    const showRealModal = () => {
+      modalThumb.style.background = d.gradient;
+      modalCat.textContent = d.cat;
+      modalTitle.textContent = d.title;
+      modalDesc.textContent = d.desc;
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      modalClose.focus();
+      morphOverlay.classList.remove('active');
+    };
 
-  const showRealModal = () => {
-    modalThumb.style.background = d.gradient;
-    modalCat.textContent = d.cat;
-    modalTitle.textContent = d.title;
-    modalDesc.textContent = d.desc;
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    modalClose.focus();
-    morphOverlay.classList.remove('active');
-  };
+    if (sourceEl && !reduceMotion){
+      const rect = sourceEl.getBoundingClientRect();
+      // Posiziona il clone esattamente sopra l'elemento cliccato
+      morphOverlay.style.transition = 'none';
+      morphOverlay.style.top = rect.top + 'px';
+      morphOverlay.style.left = rect.left + 'px';
+      morphOverlay.style.width = rect.width + 'px';
+      morphOverlay.style.height = rect.height + 'px';
+      morphOverlay.style.background = d.gradient;
+      morphOverlay.classList.add('active');
 
-  if (sourceEl && !reduceMotion){
-    const rect = sourceEl.getBoundingClientRect();
-    // Posiziona il clone esattamente sopra l'elemento cliccato
-    morphOverlay.style.transition = 'none';
-    morphOverlay.style.top = rect.top + 'px';
-    morphOverlay.style.left = rect.left + 'px';
-    morphOverlay.style.width = rect.width + 'px';
-    morphOverlay.style.height = rect.height + 'px';
-    morphOverlay.style.background = d.gradient;
-    morphOverlay.classList.add('active');
+      // Forza il reflow, poi riattiva la transizione e anima verso schermo intero
+      requestAnimationFrame(() => {
+        morphOverlay.style.transition = 'all 0.55s cubic-bezier(0.65, 0, 0.35, 1)';
+        morphOverlay.style.top = '0px';
+        morphOverlay.style.left = '0px';
+        morphOverlay.style.width = '100vw';
+        morphOverlay.style.height = '100vh';
+        morphOverlay.style.borderRadius = '0px';
+      });
 
-    // Forza il reflow, poi riattiva la transizione e anima verso schermo intero
-    requestAnimationFrame(() => {
-      morphOverlay.style.transition = 'all 0.55s cubic-bezier(0.65, 0, 0.35, 1)';
-      morphOverlay.style.top = '0px';
-      morphOverlay.style.left = '0px';
-      morphOverlay.style.width = '100vw';
-      morphOverlay.style.height = '100vh';
-      morphOverlay.style.borderRadius = '0px';
-    });
-
-    morphOverlay.addEventListener('transitionend', showRealModal, { once: true });
-  } else {
-    showRealModal();
+      morphOverlay.addEventListener('transitionend', showRealModal, { once: true });
+    } else {
+      showRealModal();
+    }
   }
-}
 
-function closeModal(){
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-  if (lastFocused) lastFocused.focus();
-}
-modalClose.addEventListener('click', closeModal);
-overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  function closeModal(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastFocused) lastFocused.focus();
+  }
+  modalClose.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-document.querySelectorAll('.project-card[data-project]').forEach(card => {
-  card.addEventListener('click', () => openModal(card.dataset.project, card));
-  card.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project, card); }
+  document.querySelectorAll('.project-card[data-project]').forEach(card => {
+    card.addEventListener('click', () => openModal(card.dataset.project, card));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project, card); }
+    });
   });
-});
 
   /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto ---------- */
   const cube = document.getElementById('cube');
@@ -785,7 +780,6 @@ document.querySelectorAll('.project-card[data-project]').forEach(card => {
     cube.classList.add('dragging');
     startX = e.clientX; startY = e.clientY;
     startRotX = rotX; startRotY = rotY;
-    // Salvato ora: dopo setPointerCapture, e.target sui prossimi eventi punta al contenitore, non più al lato cliccato
     pointerDownTarget = e.target;
     wrap.setPointerCapture(e.pointerId);
   });
@@ -806,7 +800,7 @@ document.querySelectorAll('.project-card[data-project]').forEach(card => {
     cube.classList.remove('dragging');
     if (!moved) {
       const face = pointerDownTarget ? pointerDownTarget.closest('.face') : null;
-    if (face && face.dataset.project) openModal(face.dataset.project, face);
+      if (face && face.dataset.project) openModal(face.dataset.project, face);
     } else if (!reduceMotion) {
       setTimeout(() => { if (!dragging) autoRotate = true; }, 2500);
     }
@@ -818,9 +812,9 @@ document.querySelectorAll('.project-card[data-project]').forEach(card => {
 
   // Accessibilità da tastiera: Invio/Spazio su un lato del cubo apre il progetto
   document.querySelectorAll('.face[data-project]').forEach(face => {
-face.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project, face); }
-});
+    face.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project, face); }
+    });
   });
 </script>
 
