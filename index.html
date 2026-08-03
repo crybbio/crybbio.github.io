@@ -109,6 +109,21 @@
     cursor: grab;
     touch-action: none;
   }
+  .wireframe.entering{
+    transition: transform 1.3s cubic-bezier(.18,.9,.15,1);
+}
+
+.hero.zooming{
+    perspective:2200px;
+}
+
+.face{
+    transition:
+        transform 1.3s cubic-bezier(.18,.9,.15,1),
+        width 1.3s cubic-bezier(.18,.9,.15,1),
+        height 1.3s cubic-bezier(.18,.9,.15,1),
+        opacity .5s;
+}
   .wireframe.dragging{ cursor: grabbing; }
   .wireframe .face{
     position:absolute; width:320px; height:320px;
@@ -117,8 +132,12 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap: 0.4rem;
     cursor: pointer;
-    transition: filter 0.2s ease;
-  }
+transition:
+transform 1.3s cubic-bezier(.18,.9,.15,1),
+width 1.3s cubic-bezier(.18,.9,.15,1),
+height 1.3s cubic-bezier(.18,.9,.15,1),
+opacity .5s,
+filter .2s;  }
   .wireframe .face:hover, .wireframe .face:focus-visible{ filter: brightness(0.92); }
   .face .face-dim{
     font-family:'JetBrains Mono', monospace;
@@ -457,6 +476,65 @@
     .scroll-hint::after{ animation:none; }
     .charm{ animation:none; }
   }
+
+  .project-page{
+
+position:fixed;
+inset:0;
+
+background:#000;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+opacity:0;
+visibility:hidden;
+
+transition:.6s;
+
+z-index:500;
+
+}
+
+.project-page.show{
+
+opacity:1;
+visibility:visible;
+
+}
+
+.project-content{
+
+max-width:900px;
+
+padding:80px;
+
+transform:translateY(80px);
+
+transition:1s;
+
+}
+
+.project-page.show .project-content{
+
+transform:none;
+
+}
+
+#backCube{
+
+position:absolute;
+
+top:40px;
+
+left:40px;
+
+padding:12px 20px;
+
+cursor:pointer;
+
+}
 </style>
 </head>
 <body>
@@ -650,17 +728,23 @@
 
 <!-- Overlay usato per l'effetto di espansione dal cubo/dalle card -->
 <div class="morph-overlay" id="morphOverlay"></div>
+  
+<div id="projectPage" class="project-page">
 
-<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal">
-    <button class="modal-close" id="modalClose" aria-label="Chiudi">✕</button>
-    <div class="modal-thumb" id="modalThumb"></div>
-    <div class="modal-body">
-      <div class="cat" id="modalCat"></div>
-      <h3 id="modalTitle"></h3>
-      <p id="modalDesc"></p>
+    <button id="backCube">
+        ← Torna al cubo
+    </button>
+
+    <div class="project-content">
+
+        <div id="projectCat"></div>
+
+        <h1 id="projectTitle"></h1>
+
+        <p id="projectDesc"></p>
+
     </div>
-  </div>
+
 </div>
 
 <footer>
@@ -692,11 +776,54 @@
   const morphOverlay = document.getElementById('morphOverlay');
   let lastFocused = null;
 
-  function openModal(id, sourceEl){
-    const d = projectData[id];
-    if (!d) return;
-    lastFocused = document.activeElement;
-    autoRotate = false;
+function enterProject(face,id){
+
+const d=projectData[id];
+
+autoRotate=false;
+
+document.querySelector(".hero").classList.add("zooming");
+
+cube.classList.add("entering");
+
+const target={
+
+f1:[-18,0],
+f2:[-18,180],
+f3:[-18,-90],
+f4:[-18,90],
+f5:[-90,0],
+f6:[90,0]
+
+};
+
+const cls=[...face.classList].find(c=>/^f\d$/.test(c));
+
+rotX=target[cls][0];
+
+rotY=target[cls][1];
+
+cube.style.transform=
+`
+rotateX(${rotX}deg)
+rotateY(${rotY}deg)
+translateZ(850px)
+scale(6)
+`;
+
+setTimeout(()=>{
+
+document.getElementById("projectCat").innerHTML=d.cat;
+
+document.getElementById("projectTitle").innerHTML=d.title;
+
+document.getElementById("projectDesc").innerHTML=d.desc;
+
+document.getElementById("projectPage").classList.add("show");
+
+},1200);
+
+}
 
     const showRealModal = () => {
       modalThumb.style.background = d.gradient;
@@ -746,9 +873,9 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
   document.querySelectorAll('.project-card[data-project]').forEach(card => {
-    card.addEventListener('click', () => openModal(card.dataset.project, card));
+    card.addEventListener('click', () => enterProject(card.dataset.project, card));
     card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project, card); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterProject(card.dataset.project, card); }
     });
   });
 
@@ -800,7 +927,7 @@
     cube.classList.remove('dragging');
     if (!moved) {
       const face = pointerDownTarget ? pointerDownTarget.closest('.face') : null;
-      if (face && face.dataset.project) openModal(face.dataset.project, face);
+      if (face && face.dataset.project) enterProject(face,face.dataset.project);
     } else if (!reduceMotion) {
       setTimeout(() => { if (!dragging) autoRotate = true; }, 2500);
     }
@@ -813,9 +940,27 @@
   // Accessibilità da tastiera: Invio/Spazio su un lato del cubo apre il progetto
   document.querySelectorAll('.face[data-project]').forEach(face => {
     face.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project, face); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterProject(face.dataset.project, face); }
     });
   });
+
+  document.getElementById("backCube").onclick=()=>{
+
+document.getElementById("projectPage").classList.remove("show");
+
+cube.style.transform=
+`
+rotateX(${rotX}deg)
+rotateY(${rotY}deg)
+`;
+
+cube.classList.remove("entering");
+
+document.querySelector(".hero").classList.remove("zooming");
+
+autoRotate=true;
+
+}
 </script>
 
 </body>
