@@ -102,13 +102,17 @@
     margin-bottom: 1.4rem;
     perspective: 1100px;
   }
-  .wireframe{
-    width:100%; height:100%;
+.wireframe{
+    width:100%;
+    height:100%;
     position:relative;
-    transform-style: preserve-3d;
-    cursor: grab;
-    touch-action: none;
-  }
+    transform-style:preserve-3d;
+    cursor:grab;
+    touch-action:none;
+
+    transition:
+    transform 1.3s cubic-bezier(.18,.9,.15,1);
+}
   .wireframe.entering{
     transition: transform 1.3s cubic-bezier(.18,.9,.15,1);
 }
@@ -118,11 +122,9 @@
 }
 
 .face{
-    transition:
-        transform 1.3s cubic-bezier(.18,.9,.15,1),
-        width 1.3s cubic-bezier(.18,.9,.15,1),
-        height 1.3s cubic-bezier(.18,.9,.15,1),
-        opacity .5s;
+transition:
+transform 1.3s cubic-bezier(.18,.9,.15,1),
+filter .3s ease;
 }
   .wireframe.dragging{ cursor: grabbing; }
   .wireframe .face{
@@ -778,50 +780,65 @@ cursor:pointer;
 
 function enterProject(face,id){
 
-const d=projectData[id];
+    const d = projectData[id];
 
-autoRotate=false;
+    autoRotate = false;
 
-document.querySelector(".hero").classList.add("zooming");
+    const hero = document.querySelector(".hero");
 
-cube.classList.add("entering");
+    hero.classList.add("zooming");
+    cube.classList.add("entering");
 
-const target={
 
-f1:[-18,0],
-f2:[-18,180],
-f3:[-18,-90],
-f4:[-18,90],
-f5:[-90,0],
-f6:[90,0]
+    const target = {
+        f1:[-18,0],
+        f2:[-18,180],
+        f3:[-18,-90],
+        f4:[-18,90],
+        f5:[-90,0],
+        f6:[90,0]
+    };
 
-};
 
-const cls=[...face.classList].find(c=>/^f\d$/.test(c));
+    const cls=[...face.classList].find(c=>/^f\d$/.test(c));
 
-rotX=target[cls][0];
 
-rotY=target[cls][1];
+    rotX = target[cls][0];
+    rotY = target[cls][1];
 
-cube.style.transform=
-`
-rotateX(${rotX}deg)
-rotateY(${rotY}deg)
-translateZ(850px)
-scale(6)
-`;
 
-setTimeout(()=>{
+    /*
+       Prima ruota il cubo verso la faccia cliccata,
+       poi lo porta verso lo spettatore
+    */
 
-document.getElementById("projectCat").innerHTML=d.cat;
+    cube.style.transform =
+    `
+    rotateX(${rotX}deg)
+    rotateY(${rotY}deg)
+    translateZ(1200px)
+    scale(8)
+    `;
 
-document.getElementById("projectTitle").innerHTML=d.title;
 
-document.getElementById("projectDesc").innerHTML=d.desc;
+    /*
+       ingrandiamo la faccia selezionata
+    */
 
-document.getElementById("projectPage").classList.add("show");
+    face.style.zIndex="10";
 
-},1200);
+
+    setTimeout(()=>{
+
+        document.getElementById("projectCat").textContent=d.cat;
+        document.getElementById("projectTitle").textContent=d.title;
+        document.getElementById("projectDesc").textContent=d.desc;
+
+        document.getElementById("projectPage")
+        .classList.add("show");
+
+
+    },1000);
 
 }
 
