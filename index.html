@@ -783,55 +783,52 @@ let rotX = -18;
 let rotY = 0;
 let autoRotate = true;
   
-function enterProject(face,id){
-
+function enterProject(face, id) {
     const d = projectData[id];
 
-    autoRotate = true;
+    autoRotate = false;
 
     const target = {
-        f1:[-18,0],
-        f2:[-18,180],
-        f3:[-18,-90],
-        f4:[-18,90],
-        f5:[-90,0],
-        f6:[90,0]
+        f1: [-18, 0],
+        f2: [-18, 180],
+        f3: [-18, -90],
+        f4: [-18, 90],
+        f5: [-90, 0],
+        f6: [90, 0]
     };
 
-
-    const cls=[...face.classList].find(c=>/^f\d$/.test(c));
-
+    const cls = [...face.classList].find(c => /^f\d$/.test(c));
 
     rotX = target[cls][0];
     rotY = target[cls][1];
 
-
-    // prima gira verso la faccia cliccata
+    // Prima gira verso la faccia cliccata
     applyRotation();
 
+    // Poi applica l'espansione se non è già espanso
+    if (!expanded) {
+        cube.style.transform += ' scale(1.5) translateZ(50px)';
+        expanded = true;
+    }
 
-    // poi viene verso lo spettatore
-    setTimeout(()=>{
+    // Mostra i dettagli del progetto
+    setTimeout(() => {
+        document.getElementById("projectCat").textContent = d.cat;
+        document.getElementById("projectTitle").textContent = d.title;
+        document.getElementById("projectDesc").textContent = d.desc;
 
- applyRotation();
-
-    },50);
-
-
-
-    setTimeout(()=>{
-
-        document.getElementById("projectCat").textContent=d.cat;
-        document.getElementById("projectTitle").textContent=d.title;
-        document.getElementById("projectDesc").textContent=d.desc;
-
-        document.getElementById("projectPage")
-        .classList.add("show");
-
-    },1300);
-
+        document.getElementById("projectPage").classList.add("show");
+    }, 1300);
 }
-
+// Funzione per resettare il cubo alla posizione originale
+function resetCube() {
+    cube.style.transform = `
+    rotateX(${rotX}deg)
+    rotateY(${rotY}deg)
+    `;
+    expanded = false;
+}
+  
     const showRealModal = () => {
       modalThumb.style.background = d.gradient;
       modalCat.textContent = d.cat;
@@ -870,11 +867,14 @@ function enterProject(face,id){
     }
   }
 
-  function closeModal(){
-    overlay.classList.remove('open');
+// Modifica il metodo di chiusura del modal
+function closeModal() {
+    document.getElementById("projectPage").classList.remove("show");
+    // Ripristina il cubo alla posizione originale
+    resetCube();
     document.body.style.overflow = '';
     if (lastFocused) lastFocused.focus();
-  }
+}
   modalClose.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
@@ -956,23 +956,11 @@ function applyRotation(extra=""){
     });
   });
 
-  document.getElementById("backCube").onclick=()=>{
-
-document.getElementById("projectPage").classList.remove("show");
-
-cube.style.transform=
-`
-rotateX(${rotX}deg)
-rotateY(${rotY}deg)
-`;
-
-cube.classList.remove("entering");
-
-document.querySelector(".hero").classList.remove("zooming");
-
-autoRotate=true;
-
-}
+document.getElementById("backCube").onclick = () => {
+    closeModal();
+    // Puoi anche assicurarti di ripristinare la trasformazione
+    resetCube();
+};
 </script>
 
 </body>
