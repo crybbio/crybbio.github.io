@@ -777,18 +777,17 @@ cursor:pointer;
   const modalClose = document.getElementById('modalClose');
   const morphOverlay = document.getElementById('morphOverlay');
   let lastFocused = null;
-
+  
+const cube = document.getElementById('cube');
+let rotX = -18;
+let rotY = 0;
+let autoRotate = true;
+  
 function enterProject(face,id){
 
     const d = projectData[id];
 
     autoRotate = false;
-
-    const hero = document.querySelector(".hero");
-
-    hero.classList.add("zooming");
-    cube.classList.add("entering");
-
 
     const target = {
         f1:[-18,0],
@@ -807,25 +806,17 @@ function enterProject(face,id){
     rotY = target[cls][1];
 
 
-    /*
-       Prima ruota il cubo verso la faccia cliccata,
-       poi lo porta verso lo spettatore
-    */
-
-    cube.style.transform =
-    `
-    rotateX(${rotX}deg)
-    rotateY(${rotY}deg)
-    translateZ(1200px)
-    scale(8)
-    `;
+    // prima gira verso la faccia cliccata
+    applyRotation();
 
 
-    /*
-       ingrandiamo la faccia selezionata
-    */
+    // poi viene verso lo spettatore
+    setTimeout(()=>{
 
-    face.style.zIndex="10";
+ applyRotation();
+
+    },50);
+
 
 
     setTimeout(()=>{
@@ -837,8 +828,7 @@ function enterProject(face,id){
         document.getElementById("projectPage")
         .classList.add("show");
 
-
-    },1000);
+    },1300);
 
 }
 
@@ -896,18 +886,23 @@ function enterProject(face,id){
     });
   });
 
-  /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto ---------- */
+  /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto 
   const cube = document.getElementById('cube');
   const wrap = document.querySelector('.wireframe-wrap');
   let rotX = -18, rotY = 0;
   let autoRotate = true;
   let dragging = false, moved = false;
   let startX = 0, startY = 0, startRotX = 0, startRotY = 0;
-  let pointerDownTarget = null;
+  let pointerDownTarget = null;---------- */
 
-  function applyRotation(){
-    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-  }
+function applyRotation(extra=""){
+    cube.style.transform =
+    `
+    rotateX(${rotX}deg)
+    rotateY(${rotY}deg)
+    ${extra}
+    `;
+}
   applyRotation();
 
   function tick(){
