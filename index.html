@@ -885,7 +885,8 @@ function closeModal() {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterProject(card.dataset.project, card); }
     });
   });
-
+  
+let expanded = false;
   /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto 
   const cube = document.getElementById('cube');
   const wrap = document.querySelector('.wireframe-wrap');
