@@ -1,156 +1,223 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expanding 3D Cube</title>
+    <title>Cubo Espansibile Progetti</title>
     <style>
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #1a1a1a;
+            background-color: #111;
             margin: 0;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
-        /* The stage: provides the 3D depth perception */
-        .cube-wrapper {
-            position: relative;
+        /* Contenitore con prospettiva */
+        .scene {
             width: 200px;
             height: 200px;
-            perspective: 1000px; /* Essential for 3D effect */
+            perspective: 1000px;
         }
 
-        /* The cube container: holds the faces and handles rotation */
         .cube {
-            position: relative;
             width: 100%;
             height: 100%;
-            transform-style: preserve-3d; /* Keeps children in 3D space */
+            position: relative;
+            transform-style: preserve-3d;
             transform: translateZ(-100px) rotateX(-20deg) rotateY(45deg);
-            transition: transform 1s ease-in-out;
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
         }
 
-        /* Common styles for all 6 faces */
-        .cube-face {
+        .face {
             position: absolute;
             width: 200px;
             height: 200px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #333;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #fff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #333;
-            backface-visibility: visible; /* Allows seeing inside when expanded */
-            transition: transform 1s ease-in-out, opacity 0.5s;
-            opacity: 0.95;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            backface-visibility: hidden; /* Nasconde le facce posteriori durante l'espansione */
+            transition: all 0.8s ease-in-out;
+            opacity: 1;
         }
 
-        /* Initial 3D Positioning of Faces */
-        /* TranslateZ moves them out from the center by half the width (100px) */
-        .face-front  { transform: rotateY(0deg) translateZ(100px); background: #ffadad; }
-        .face-back   { transform: rotateY(180deg) translateZ(100px); background: #ffd6a5; }
-        .face-right  { transform: rotateY(90deg) translateZ(100px); background: #fdffb6; }
-        .face-left   { transform: rotateY(-90deg) translateZ(100px); background: #caffbf; }
-        .face-top    { transform: rotateX(90deg) translateZ(100px); background: #9bf6ff; }
-        .face-bottom { transform: rotateX(-90deg) translateZ(100px); background: #a0c4ff; }
+        /* Posizionamento iniziale delle 6 facce */
+        .face.front  { transform: rotateY(0deg) translateZ(100px); background: #ff6b6b; color: white; }
+        .face.back   { transform: rotateY(180deg) translateZ(100px); background: #4ecdc4; color: white; }
+        .face.right  { transform: rotateY(90deg) translateZ(100px); background: #ffe66d; color: #333; }
+        .face.left   { transform: rotateY(-90deg) translateZ(100px); background: #1a535c; color: white; }
+        .face.top    { transform: rotateX(90deg) translateZ(100px); background: #ff9f1c; color: white; }
+        .face.bottom { transform: rotateX(-90deg) translateZ(100px); background: #2b2d42; color: white; }
 
-        /* --- EXPANDED STATE (The Magic) --- */
+        /* --- STATO DI ESPANSIONE --- */
         
-        /* Reset the main cube rotation to face the user directly */
-        .cube.is-opened {
-            transform: translateZ(-100px) rotateX(0deg) rotateY(0deg) !important;
+        /* Quando una faccia è attiva, il cubo si riorienta */
+        .cube.is-expanding {
+            transition: transform 1s ease-in-out;
+            /* La rotazione specifica verrà iniettata via JS per allineare la faccia */
         }
 
-        /* Re-position faces into a flat 2D cross layout */
-        /* We calculate offsets based on the face size (200px) + gaps */
-        
-        .cube.is-opened .face-front {
-            transform: translate3d(0, 0, 0) rotateX(0) rotateY(0);
-            z-index: 10; /* Keep front face on top */
+        /* La faccia attiva si espande verso l'utente (Z positivo alto) */
+        .face.is-active {
+            transform: translateZ(600px) !important; /* Esce dallo schermo */
+            width: 400px;  /* Si ingrandisce */
+            height: 400px;
+            margin-left: -100px; /* Centra rispetto alla nuova larghezza */
+            margin-top: -100px;
+            z-index: 100;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            cursor: default;
         }
 
-        .cube.is-opened .face-back {
-            transform: translate3d(-600px, 0, 0) rotateY(0);
+        /* Le altre facce svaniscono per dare focus */
+        .cube.is-expanding .face:not(.is-active) {
+            opacity: 0;
+            pointer-events: none;
         }
 
-        .cube.is-opened .face-right {
-            transform: translate3d(200px, 0, 0) rotateY(0);
-        }
+        .project-title { font-size: 24px; margin-bottom: 10px; text-transform: uppercase; }
+        .project-desc { font-size: 14px; font-weight: normal; opacity: 0.9; }
+        .click-hint { font-size: 12px; margin-top: 15px; opacity: 0.7; animation: pulse 1.5s infinite; }
 
-        .cube.is-opened .face-left {
-            transform: translate3d(-200px, 0, 0) rotateY(0);
-        }
-
-        .cube.is-opened .face-top {
-            transform: translate3d(0, -200px, 0) rotateX(0);
-        }
-
-        .cube.is-opened .face-bottom {
-            transform: translate3d(0, 200px, 0) rotateX(0);
-        }
-
-        /* Optional: Hover effect for interaction hint */
-        .cube-face:hover {
-            filter: brightness(0.9);
-        }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
     </style>
 </head>
 <body>
 
-    <div class="cube-wrapper">
-        <div class="cube" id="magicCube">
-            <div class="cube-face face-front">Front</div>
-            <div class="cube-face face-back">Back</div>
-            <div class="cube-face face-right">Right</div>
-            <div class="cube-face face-left">Left</div>
-            <div class="cube-face face-top">Top</div>
-            <div class="cube-face face-bottom">Bottom</div>
+    <div class="scene">
+        <div class="cube" id="projectCube">
+            <!-- 
+               IMPORTANTE: Sostituisci i data-url con i link reali dei tuoi progetti 
+            -->
+            <div class="face front" data-url="https://example.com/progetto-frontend">
+                <div class="project-title">Frontend</div>
+                <div class="project-desc">Sito Web Moderno</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
+            
+            <div class="face back" data-url="https://example.com/progetto-backend">
+                <div class="project-title">Backend</div>
+                <div class="project-desc">API & Database</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
+            
+            <div class="face right" data-url="https://example.com/progetto-mobile">
+                <div class="project-title">Mobile</div>
+                <div class="project-desc">App iOS/Android</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
+            
+            <div class="face left" data-url="https://example.com/progetto-design">
+                <div class="project-title">Design</div>
+                <div class="project-desc">UI/UX Case Study</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
+            
+            <div class="face top" data-url="https://example.com/progetto-cloud">
+                <div class="project-title">Cloud</div>
+                <div class="project-desc">Infrastruttura AWS</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
+            
+            <div class="face bottom" data-url="https://example.com/progetto-ai">
+                <div class="project-title">AI / ML</div>
+                <div class="project-desc">Modelli Predittivi</div>
+                <div class="click-hint">Clicca per aprire</div>
+            </div>
         </div>
     </div>
 
     <script>
-        const cube = document.getElementById('magicCube');
-        const faces = document.querySelectorAll('.cube-face');
+        const cube = document.getElementById('projectCube');
+        const faces = document.querySelectorAll('.face');
+        let isAnimating = false;
 
-        // Add click event to each face
+        // Mappa delle rotazioni necessarie per portare ogni faccia "frontale"
+        // Formato: [rotateX, rotateY]
+        const rotations = {
+            'front':  [0, 0],
+            'back':   [0, 180],
+            'right':  [0, -90],
+            'left':   [0, 90],
+            'top':    [-90, 0],
+            'bottom': [90, 0]
+        };
+
         faces.forEach(face => {
-            face.addEventListener('click', () => {
-                // Toggle the 'is-opened' class to trigger CSS transitions
-                cube.classList.toggle('is-opened');
+            face.addEventListener('click', (e) => {
+                if (isAnimating) return; // Previene click multipli durante animazione
+                isAnimating = true;
+
+                // 1. Identifica la faccia cliccata
+                const clickedFace = e.currentTarget;
+                const faceClass = Array.from(clickedFace.classList).find(c => c.startsWith('face-')); // es. 'face-front'
+                const faceName = faceClass.replace('face-', ''); // es. 'front'
+                const targetUrl = clickedFace.getAttribute('data-url');
+                const targetRotation = rotations[faceName];
+
+                if (!targetRotation) return;
+
+                // 2. Aggiungi classe per nascondere le altre facce
+                cube.classList.add('is-expanding');
+                clickedFace.classList.add('is-active');
+
+                // 3. Ruota il cubo intero per allineare la faccia cliccata frontalmente
+                // Nota: translateZ(-100px) mantiene il centro del cubo stabile durante la rotazione
+                cube.style.transform = `translateZ(-100px) rotateX(${targetRotation[0]}deg) rotateY(${targetRotation[1]}deg)`;
+
+                // 4. Attendi la fine dell'animazione per il redirect
+                setTimeout(() => {
+                    if (targetUrl) {
+                        // Apri in una nuova scheda o nella stessa
+                        window.location.href = targetUrl;
+                        
+                        // Reset opzionale se l'utente torna indietro (history back)
+                        setTimeout(() => {
+                            resetCube();
+                        }, 100);
+                    }
+                }, 1000); // 1000ms deve corrispondere al transition CSS
             });
         });
 
-        // Optional: Allow dragging to rotate the cube when closed
+        // Funzione di reset (utile se l'utente preme "Indietro" nel browser)
+        function resetCube() {
+            cube.classList.remove('is-expanding');
+            faces.forEach(f => f.classList.remove('is-active'));
+            cube.style.transform = `translateZ(-100px) rotateX(-20deg) rotateY(45deg)`;
+            isAnimating = false;
+        }
+
+        // Opzionale: Rotazione libera col mouse se non si sta espandendo
         let isDragging = false;
         let startX, startY, currentRotateX = -20, currentRotateY = 45;
 
         cube.addEventListener('mousedown', (e) => {
-            if (cube.classList.contains('is-opened')) return; // Disable drag when open
+            if (isAnimating) return;
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
-            cube.style.transition = 'none'; // Remove transition for instant drag response
+            cube.style.transition = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             const deltaX = e.clientX - startX;
             const deltaY = e.clientY - startY;
-            
             currentRotateY += deltaX * 0.5;
             currentRotateX -= deltaY * 0.5;
-
             cube.style.transform = `translateZ(-100px) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
-            
             startX = e.clientX;
             startY = e.clientY;
         });
@@ -158,7 +225,7 @@
         document.addEventListener('mouseup', () => {
             if (isDragging) {
                 isDragging = false;
-                cube.style.transition = 'transform 1s ease-in-out'; // Restore transition
+                cube.style.transition = 'transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             }
         });
     </script>
