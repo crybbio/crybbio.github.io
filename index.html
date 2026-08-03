@@ -386,6 +386,20 @@
     flex-wrap:wrap; gap:0.8rem;
   }
 
+  /*modifica */
+  <div class="morph-overlay" id="morphOverlay"></div>
+  .morph-overlay{
+  position: fixed;
+  z-index: 150;
+  border-radius: 6px;
+  pointer-events: none;
+  transition: all 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+  opacity: 0;
+}
+.morph-overlay.active{
+  opacity: 1;
+}
+
   /* ---------- Modale progetto ---------- */
   .project-card{ cursor: pointer; }
   .modal-overlay{
@@ -681,35 +695,67 @@
   const modalClose = document.getElementById('modalClose');
   let lastFocused = null;
 
-  function openModal(id){
-    const d = projectData[id];
-    if (!d) return;
-    lastFocused = document.activeElement;
+const morphOverlay = document.getElementById('morphOverlay');
+
+function openModal(id, sourceEl){
+  const d = projectData[id];
+  if (!d) return;
+  lastFocused = document.activeElement;
+  autoRotate = false;
+
+  const showRealModal = () => {
     modalThumb.style.background = d.gradient;
     modalCat.textContent = d.cat;
     modalTitle.textContent = d.title;
     modalDesc.textContent = d.desc;
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    autoRotate = false;
     modalClose.focus();
-  }
-  function closeModal(){
-    overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    if (lastFocused) lastFocused.focus();
-  }
-  modalClose.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    morphOverlay.classList.remove('active');
+  };
 
-  // Le card della griglia progetti aprono lo stesso modale
-  document.querySelectorAll('.project-card[data-project]').forEach(card => {
-    card.addEventListener('click', () => openModal(card.dataset.project));
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project); }
+  if (sourceEl && !reduceMotion){
+    const rect = sourceEl.getBoundingClientRect();
+    // Posiziona il clone esattamente sopra l'elemento cliccato
+    morphOverlay.style.transition = 'none';
+    morphOverlay.style.top = rect.top + 'px';
+    morphOverlay.style.left = rect.left + 'px';
+    morphOverlay.style.width = rect.width + 'px';
+    morphOverlay.style.height = rect.height + 'px';
+    morphOverlay.style.background = d.gradient;
+    morphOverlay.classList.add('active');
+
+    // Forza il reflow, poi riattiva la transizione e anima verso schermo intero
+    requestAnimationFrame(() => {
+      morphOverlay.style.transition = 'all 0.55s cubic-bezier(0.65, 0, 0.35, 1)';
+      morphOverlay.style.top = '0px';
+      morphOverlay.style.left = '0px';
+      morphOverlay.style.width = '100vw';
+      morphOverlay.style.height = '100vh';
+      morphOverlay.style.borderRadius = '0px';
     });
+
+    morphOverlay.addEventListener('transitionend', showRealModal, { once: true });
+  } else {
+    showRealModal();
+  }
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  if (lastFocused) lastFocused.focus();
+}
+modalClose.addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+document.querySelectorAll('.project-card[data-project]').forEach(card => {
+  card.addEventListener('click', () => openModal(card.dataset.project, card));
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.project, card); }
   });
+});
 
   /* ---------- Cubo: rotazione a trascinamento + click per aprire un progetto ---------- */
   const cube = document.getElementById('cube');
@@ -760,7 +806,7 @@
     cube.classList.remove('dragging');
     if (!moved) {
       const face = pointerDownTarget ? pointerDownTarget.closest('.face') : null;
-      if (face && face.dataset.project) openModal(face.dataset.project);
+    if (face && face.dataset.project) openModal(face.dataset.project, face);
     } else if (!reduceMotion) {
       setTimeout(() => { if (!dragging) autoRotate = true; }, 2500);
     }
@@ -772,9 +818,9 @@
 
   // Accessibilità da tastiera: Invio/Spazio su un lato del cubo apre il progetto
   document.querySelectorAll('.face[data-project]').forEach(face => {
-    face.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project); }
-    });
+face.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(face.dataset.project, face); }
+});
   });
 </script>
 
